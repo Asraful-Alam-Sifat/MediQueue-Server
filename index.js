@@ -56,8 +56,18 @@ app.get('/', async (req, res) => {
 })
 
 
-app.get('/tutors',  (req, res) => {
-   res.send('tutors data is coming');
+app.get('/tutors', async (req, res) => {
+    try {
+    const db = client.db('mediqueue');
+    const tutorCollection = db.collection('tutor');
+
+    const tutors = await tutorCollection.find().toArray();
+
+    res.json(tutors);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Failed to fetch all tutors' });
+  }
 })
 app.get('/add-tutor', (req, res) => {
   res.send('tutors are adding');
