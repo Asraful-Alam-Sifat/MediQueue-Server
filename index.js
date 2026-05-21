@@ -1,7 +1,7 @@
-const express = require('express');
-const cors = require('cors');
-const { MongoClient, ServerApiVersion } = require('mongodb');
-require('dotenv').config();
+const express = require("express");
+const cors = require("cors");
+const { MongoClient, ServerApiVersion } = require("mongodb");
+require("dotenv").config();
 
 const uri = process.env.MONGODB_URI;
 const app = express();
@@ -16,85 +16,95 @@ const client = new MongoClient(uri, {
     version: ServerApiVersion.v1,
     strict: true,
     deprecationErrors: true,
-  }
+  },
 });
+
+// Setup collection pointers cleanly
+let db;
+let tutorCollection;
 
 async function run() {
   try {
-    // Connect the client to the server (Vercel will reuse this connection where possible)
+    // Connect the client to the server
     await client.connect();
     
-    const db = client.db('mediqueue');
-    const tutorCollection = db.collection('tutor');
+    // Initialize collections immediately upon connection
+    db = client.db("mediqueue");
+    tutorCollection = db.collection("tutor");
 
-    // 1. Get Featured Tutors Route
-    app.get('/featured-tutors', async (req, res) => {
-      try {
-        const tutors = await tutorCollection.aggregate([
-          { $limit: 6 }
-        ]).toArray();
-        res.json(tutors);
-      } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Failed to fetch featured tutors' });
-      }
-    });
-
-    // 2. Get All Tutors Route
-    app.get('/tutors', async (req, res) => {
-      try {
-        const tutors = await tutorCollection.find().toArray();
-        res.json(tutors);
-      } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Failed to fetch tutors' });
-      }
-    });
-
-    // 3. Test Add-Tutor Route (GET)
-    app.get('/add-tutor', (req, res) => {
-      res.send('tutors are adding');
-    });
-
-    // 4. Add Tutor Route (POST)
-    app.post('/add-tutor', async (req, res) => {
-      try {
-        // FIXED: Extract the body data correctly. 
-        // In your screenshot, 'tutorsData' wasn't defined, so we fallback to req.body.
-        const tutorsData = req.body; 
-        const result = await tutorCollection.insertOne(tutorsData);
-        res.json(result);
-      } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Failed to add tutor' });
-      }
-    });
-
-    // Test MongoDB ping connection
+    // Ping test
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
-
-  } finally {
-    // CRITICAL FOR VERCEL: Do NOT close the client connection here.
-    // If you close it, subsequent serverless requests won't be able to talk to MongoDB.
-    // // await client.close();
+  } catch (error) {
+    console.error("Database connection error:", error);
   }
 }
 
-// Run the database configuration
+// Invoke database connection
 run().catch(console.dir);
 
+// ==========================================
+// ALL ROUTES SIT CLEANLY IN GLOBAL SCOPE
+// ==========================================
+
 // Root Route
-app.get('/', (req, res) => {
-  res.send('Server Running');
+app.get("/", (req, res) => {
+  res.send("Server Running");
 });
 
-// For Local Development
-if (process.env.NODE_ENV !== 'production') {
-  app.listen(port, () => {
-    console.log(`Example app listening on port ${port}`);
-  });
-}
+// Featured Tutors Route
+app.get("/featured-tutors", async (req, res) => {
+  try {
+    if (!tutorCollection) {
+      // Fallback fallback pointer optimization if collection isn't loaded instantly
+      tutorCollection = client.db("mediqueue").collection("tutor");
+    }
+    const tutors = await tutorCollection.aggregate([{ $limit: 6 }]).toArray();
+    res.json(tutors);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to fetch featured tutors" });
+  }
+});
 
-// CRITICAL FOR VERCEL: Export the app instance
+// All Tutors Route
+app.get("/tutors", async (req, res) => {
+  try {
+    if (!tutorCollection) {
+      tutorCollection = client.db("mediqueue").collection("tutor");
+    }
+    const tutors = await tutorCollection.find().toArray();
+    res.json(tutors);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to fetch tutors" });
+  }
+});
+
+// Test Add Route
+app.get("/add-tutor", (req, res) => {
+  res.send("tutors are adding");
+});
+
+// Post Route
+app.post("/add-tutor", async (req, res) => {
+  try {
+    if (!tutorCollection) {
+      tutorCollection = client.db("mediqueue").collection("tutor");
+    }
+    const tutorsData = req.body;
+    const result = await tutorCollection.insertOne(tutorsData);
+    res.json(result);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to add tutor" });
+  }
+});
+
+// Clean local app listener setup 
+app.listen(port, () => {
+  console.log(`Server is running smoothly on port ${port}`);
+});
+
+// Export module for Vercel Serverless environment
 module.exports = app;
