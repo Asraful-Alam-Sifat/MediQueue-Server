@@ -174,19 +174,45 @@ app.post("/add-tutor", async (req, res) => {
 });
 
 // Booking Session Route
-app.post('/bookings', async (req, res) => {
+// Post Route for Bookings with strict duplicate validation
+app.post("/bookings", async (req, res) => {
   try {
     if (!bookingCollection) {
       bookingCollection = client.db("mediqueue").collection("bookings");
     }
-    const bookingData = req.body;
     
-    // Insert the dynamic booking payload into the database
-    const result = await bookingCollection.insertOne(bookingData);
-    res.status(201).json(result);
+    const { email, tutorId, subject } = req.body;
+
+    // 1. Validation Guard: Ensure required identity metrics exist
+    if (!email || !tutorId || !subject) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Missing mandatory fields: email, tutorId, or subject." 
+      });
+    }
+
+    // 2. Query Guard: Check if an identical booking record already exists
+    const existingBooking = await bookingCollection.findOne({
+      email: email,
+      tutorId: tutorId,
+      subject: subject
+    });
+
+    if (existingBooking) {
+      // 409 Conflict status code tells the client this is an illegal duplicate request
+      return res.status(409).json({ 
+        success: false, 
+        message: "You have already booked a session with this tutor for this subject!" 
+      });
+    }
+
+    // 3. Perfect match validation passed -> Proceed to insert document
+    const result = await bookingCollection.insertOne(req.body);
+    res.status(201).json({ success: true, insertedId: result.insertedId });
+
   } catch (error) {
     console.error("Failed to insert booking data:", error);
-    res.status(500).json({ message: "Failed to save booking" });
+    res.status(500).json({ success: false, message: "Internal server error saving booking" });
   }
 });
 
