@@ -173,8 +173,8 @@ app.post("/add-tutor", async (req, res) => {
   }
 });
 
-// Booking Session Route
-// Post Route for Bookings with strict duplicate validation
+// Booking Session post Route
+
 app.post("/bookings", async (req, res) => {
   try {
     if (!bookingCollection) {
@@ -230,6 +230,35 @@ app.get("/bookings", async (req, res) => {
     res.status(500).json({ message: "Failed to load bookings" });
   }
 });
+
+// GET Route for my-tutors - Fetches only the tutors created by a specific user email
+app.get('/my-tutors', async (req, res) => {
+  try {
+    const email = req.query.email;
+    
+    if (!email) {
+      return res.status(400).json({ message: "Email query parameter is required" });
+    }
+
+    // 1. Double check collection initialization
+    if (!tutorCollection) {
+      tutorCollection = client.db("mediqueue").collection("tutor");
+    }
+
+    // 2. Query matching the 'userEmail' field exactly
+    const query = { userEmail: email };
+    
+    // FIX: Changed 'tutorsCollection' to 'tutorCollection'
+    const result = await tutorCollection.find(query).toArray();
+    
+    res.send(result);
+  } catch (error) {
+    console.error("Error in /my-tutors route:", error);
+    res.status(500).json({ message: "Internal Server Error", error: error.message });
+  }
+});
+
+
 
 app.listen(port, () => {
   console.log(`Server is running smoothly on port ${port}`);
