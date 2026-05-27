@@ -73,7 +73,7 @@ app.get("/", (req, res) => {
     <body>
         <div class="container">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h1>🏥 MediQueue API Server</h1>
+                <h1> MediQueue API Server</h1>
                 <span class="status">● Active</span>
             </div>
             <p>Welcome to the central backend processor for the MediQueue platform. Below are the available service endpoints you can query directly or monitor database outputs with:</p>
@@ -242,6 +242,32 @@ app.delete("/tutors/:id", async (req, res) => {
   }
 });
 
+// Route to decrement tutor slots when a booking occurs
+app.patch("/tutors/:id/decrease-slots", async (req, res) => {
+  try {
+    if (!tutorCollection) {
+      tutorCollection = client.db("mediqueue").collection("tutor");
+    }
+
+    const id = req.params.id;
+    const query = { _id: new ObjectId(id) };
+
+    // $inc with -1 decreases the number field safely in MongoDB
+    const result = await tutorCollection.updateOne(query, {
+      $inc: { totalSlots: -1 }
+    });
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ success: false, message: "Tutor not found" });
+    }
+
+    res.json({ success: true, message: "Slot decremented successfully" });
+  } catch (error) {
+    console.error("Failed to update tutor slots:", error);
+    res.status(500).json({ success: false, message: "Internal server error updating slots" });
+  }
+});
+
 // Booking Session post Route
 app.post("/bookings", async (req, res) => {
   try {
@@ -324,6 +350,31 @@ app.get("/my-tutors", async (req, res) => {
     res
       .status(500)
       .json({ message: "Internal Server Error", error: error.message });
+  }
+});
+
+// DELETE route to drop/cancel a booking session document by ID
+app.delete("/bookings/:id", async (req, res) => {
+  try {
+    if (!bookingCollection) {
+      bookingCollection = client.db("mediqueue").collection("bookings");
+    }
+
+    const id = req.params.id;
+    const query = { _id: new ObjectId(id) };
+    const result = await bookingCollection.deleteOne(query);
+
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ message: "Booking record not found" });
+    }
+
+    res.json({ success: true, message: "Booking removed successfully", result });
+  } catch (error) {
+    console.error("Failed to delete booking:", error);
+    res.status(500).json({
+      message: "Failed to delete structural booking item",
+      error: error.message,
+    });
   }
 });
 
