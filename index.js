@@ -105,29 +105,9 @@ app.get("/", (req, res) => {
                     <span class="method get">GET</span>
                 </div>
 
-                <div class="route-item">
-                    <div>
-                        <span class="url" style="cursor: default;">/add-tutor</span>
-                        <div class="desc">Appends new instructor profiles to database payloads</div>
-                    </div>
-                    <span class="method post">POST</span>
-                </div>
 
-                <div class="route-item">
-                    <div>
-                        <span class="url" style="cursor: default;">/tutors/:id</span>
-                        <div class="desc">Updates structural specifications for a distinct listing ID</div>
-                    </div>
-                    <span class="method put">PUT</span>
-                </div>
-
-                <div class="route-item">
-                    <div>
-                        <span class="url" style="cursor: default;">/tutors/:id</span>
-                        <div class="desc">Permanently purges a tutor listing record from MongoDB</div>
-                    </div>
-                    <span class="method delete">DELETE</span>
-                </div>
+                            
+              
             </div>
         </div>
     </body>
@@ -165,7 +145,7 @@ app.get("/tutors", async (req, res) => {
 
 // Test Add Route
 app.get("/add-tutor", (req, res) => {
-  res.send("tutors are adding");
+  res.send("tutors are adding....");
 });
 
 // Post Route to add a tutor

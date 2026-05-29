@@ -38,14 +38,6 @@ Below are the available service endpoints you can query directly or monitor data
 | :--- | :--- | :--- |
 | `GET` | `/tutors` | Retrieves all registered tutors from the database. |
 | `GET` | `/featured-tutors` | Retrieves a limited list of 6 premium tutors. |
-| `POST` | `/add-tutor` | Appends new instructor profiles to database payloads. |
-| `PUT` | `/tutors/:id` | Updates structural specifications for a distinct listing ID. |
-| `DELETE` | `/tutors/:id` | Permanently purges a tutor listing record from MongoDB. |
+| `POST` | `/bookings` | Appends new instructor profiles to database 
 
-### 📅 Booking Endpoints
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `GET` | `/bookings` | Fetches all raw user queue bookings. |
-
----
 
